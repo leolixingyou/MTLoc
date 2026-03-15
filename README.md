@@ -47,9 +47,9 @@ Download and place in `checkpoints/`:
 
 | File | Description | Link |
 |------|-------------|------|
-| `mtloc_445k.ckpt` | MTLoc best checkpoint | [Google Drive](TODO) |
-| `orienternet_mgl.ckpt` | OrienterNet pretrained | [OrienterNet repo](https://github.com/facebookresearch/OrienterNet) |
-| `epoch-195.pth` | YOLOPX pretrained | [Google Drive](TODO) |
+| `mtloc_445k.ckpt` | MTLoc best checkpoint | [Google Drive](https://drive.google.com/drive/folders/1UhLLG3vqSiYgx61SUFOjpuUqf1THN1mc?usp=drive_link) |
+| `orienternet_mgl.ckpt` | OrienterNet pretrained | [Google Drive](https://drive.google.com/drive/folders/1UhLLG3vqSiYgx61SUFOjpuUqf1THN1mc?usp=drive_link) |
+| `epoch-195.pth` | YOLOPX pretrained | [Google Drive](https://drive.google.com/drive/folders/1UhLLG3vqSiYgx61SUFOjpuUqf1THN1mc?usp=drive_link) |
 
 See [checkpoints/README.md](checkpoints/README.md) for details.
 
