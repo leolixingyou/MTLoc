@@ -131,17 +131,6 @@ This work builds upon:
 - [OrienterNet](https://github.com/facebookresearch/OrienterNet) (Sarlin et al., CVPR 2023)
 - [YOLOP](https://github.com/hustvl/YOLOP) (Wu et al., 2022)
 
-## Citation
-
-```bibtex
-@article{mtloc2026,
-  title={MTLoc: Unifying Multi-Task Driving Perception and Map-Based Visual Localization via Backbone Freezing},
-  author={TODO},
-  journal={IEEE Access},
-  year={2026}
-}
-```
-
 ## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
