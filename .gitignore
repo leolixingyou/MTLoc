@@ -1,0 +1,32 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Checkpoints (too large for git)
+*.ckpt
+*.pth
+*.pt
+
+# Data
+data/MGL/
+data/kitti/
+data/nuscenes/
+
+# Training outputs
+runs/
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

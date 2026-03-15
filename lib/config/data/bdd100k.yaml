@@ -1,0 +1,23 @@
+# Dataset Configuration
+DATASET:
+  DATAROOT: 'data/bdd100k/images'  # Path of images folder
+  LABELROOT: 'data/bdd100k/bdd_det'  # Path of det_annotations folder
+  MASKROOT: 'data/bdd100k/bdd_seg_gt'  # Path of da_seg_annotations folder
+  LANEROOT: 'data/bdd100k/bdd_lane_gt'  # Path of ll_seg_annotations folder
+  DATASET: 'BddDataset'
+  TRAIN_SET: 'train'
+  TEST_SET: 'val'
+  DATA_FORMAT: 'jpg'
+  SELECT_DATA: False
+  ORG_IMG_SIZE: [720, 1280]
+  
+  # Data Augmentation
+  FLIP: True
+  SCALE_FACTOR: 0.25
+  ROT_FACTOR: 10
+  TRANSLATE: 0.1
+  SHEAR: 0.0
+  COLOR_RGB: False
+  HSV_H: 0.015  # Image HSV-Hue augmentation (fraction)
+  HSV_S: 0.7  # Image HSV-Saturation augmentation (fraction)
+  HSV_V: 0.4  # Image HSV-Value augmentation (fraction)

@@ -1,0 +1,22 @@
+# Model Configuration
+MODEL:
+  NAME: ''
+  STRU_WITHSHARE: False  # Add share_block to segbranch
+  HEADS_NAME: ['']
+  IMAGE_SIZE: [640, 640]  # width * height
+  EXTRA: {}
+
+# Loss Configuration
+LOSS:
+  LOSS_NAME: ''
+  MULTI_HEAD_LAMBDA: null
+  FL_GAMMA: 2.0  # Focal loss gamma
+  CLS_POS_WEIGHT: 1.0  # Classification loss positive weights
+  OBJ_POS_WEIGHT: 1.0  # Object loss positive weights
+  SEG_POS_WEIGHT: 1.0  # Segmentation loss positive weights
+  BOX_GAIN: 0.05  # Box loss gain
+  CLS_GAIN: 0.5  # Classification loss gain
+  OBJ_GAIN: 1.0  # Object loss gain
+  DA_SEG_GAIN: 0.2  # Driving area segmentation loss gain
+  LL_SEG_GAIN: 0.2  # Lane line segmentation loss gain
+  LL_IOU_GAIN: 0.2  # Lane line IoU loss gain

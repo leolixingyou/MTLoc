@@ -1,0 +1,50 @@
+# Model type for factory selection
+TYPE: 'yolop_v2'
+
+# Model Configuration
+MODEL:
+  NAME: 'YOLOP_v2'
+  STRU_WITHSHARE: False  # Add share_block to segbranch
+  HEADS_NAME: ['']
+  IMAGE_SIZE: [640, 640]  # width * height
+  EXTRA: {}
+  
+  # Architecture-specific parameters (hardcoded - DO NOT MODIFY)
+  # These values are defined in the model code and shown here for reference only
+  
+  # Detection settings (hardcoded in lib/models/yolop_v2.py)
+  nc: 1  # number of classes - hardcoded in lib/models/yolop_v2.py:25
+  
+  # Anchors (hardcoded in lib/models/yolop_v2.py:62-64 in build_model method)
+  # Used by Detect head for anchor-based detection (YOLOv5s style)
+  anchors:
+    - [10,13, 16,30, 33,23]  # P3/8 - for stride 8 feature map
+    - [30,61, 62,45, 59,119]  # P4/16 - for stride 16 feature map
+    - [116,90, 156,198, 373,326]  # P5/32 - for stride 32 feature map
+  
+  # Model indices (Note: YOLOPv2 uses dynamic model building)
+  # detector_index and output indices are determined during model construction
+  
+  # Architecture parameters
+  depth_multiple: 1.0  # model depth multiple
+  width_multiple: 1.0  # layer channel multiple
+  gr: 1.0  # iou loss ratio (for model.gr in ComputeLoss)
+  
+  # Segmentation settings
+  seg_nc: 2  # number of segmentation classes (drivable area)
+  seg_ll_nc: 2  # number of segmentation classes (lane line)
+
+# Loss Configuration
+LOSS:
+  LOSS_NAME: 'MultiHeadLoss'
+  MULTI_HEAD_LAMBDA: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]  # [cls, obj, box, da_seg, ll_seg, ll_iou]
+  FL_GAMMA: 0.0  # focal loss gamma (0.0 = disabled)
+  CLS_POS_WEIGHT: 1.0  # classification loss positive weights
+  OBJ_POS_WEIGHT: 1.0  # object loss positive weights
+  SEG_POS_WEIGHT: 1.0  # segmentation loss positive weights
+  BOX_GAIN: 0.05  # box loss gain
+  CLS_GAIN: 0.5  # classification loss gain
+  OBJ_GAIN: 1.0  # object loss gain
+  DA_SEG_GAIN: 0.2  # driving area segmentation loss gain
+  LL_SEG_GAIN: 0.2  # lane line segmentation loss gain
+  LL_IOU_GAIN: 0.2  # lane line IoU loss gain

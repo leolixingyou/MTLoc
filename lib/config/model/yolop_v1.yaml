@@ -1,0 +1,52 @@
+# Model type for factory selection
+TYPE: 'yolop_v1'
+
+# Model Configuration
+MODEL:
+  NAME: 'YOLOP_v1'
+  STRU_WITHSHARE: False  # Add share_block to segbranch
+  HEADS_NAME: ['']
+  IMAGE_SIZE: [640, 640]  # width * height
+  EXTRA: {}
+  
+  # Architecture-specific parameters (hardcoded - DO NOT MODIFY)
+  # These values are defined in the model code and shown here for reference only
+  
+  # Detection settings (hardcoded in lib/models/yolop_v1.py)
+  nc: 1  # number of classes - hardcoded in lib/models/yolop_v1.py:98
+  
+  # Anchors (hardcoded in lib/models/yolop_v1.py:59 in YOLOP_v1 architecture definition)
+  # Used by Detect head for anchor-based detection
+  anchors:
+    - [3,9, 5,11, 4,20]  # P3/8 - for stride 8 feature map
+    - [7,18, 6,39, 12,31]  # P4/16 - for stride 16 feature map
+    - [19,50, 38,81, 68,157]  # P5/32 - for stride 32 feature map
+  
+  # Model indices (hardcoded in lib/models/yolop_v1.py:28)
+  detector_index: 24  # Index of Detect layer in model architecture
+  det_out_idx: 24  # Detection output index
+  seg_out_idx: [33, 42]  # Segmentation output indices [da_seg, ll_seg]
+  
+  # Architecture parameters
+  depth_multiple: 1.0  # model depth multiple
+  width_multiple: 1.0  # layer channel multiple
+  gr: 1.0  # iou loss ratio (for model.gr in ComputeLoss)
+  
+  # Segmentation settings
+  seg_nc: 2  # number of segmentation classes (drivable area)
+  seg_ll_nc: 2  # number of segmentation classes (lane line)
+
+# Loss Configuration
+LOSS:
+  LOSS_NAME: 'MultiHeadLoss'
+  MULTI_HEAD_LAMBDA: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]  # [cls, obj, box, da_seg, ll_seg, ll_iou]
+  FL_GAMMA: 0.0  # focal loss gamma (0.0 = disabled)
+  CLS_POS_WEIGHT: 1.0  # classification loss positive weights
+  OBJ_POS_WEIGHT: 1.0  # object loss positive weights
+  SEG_POS_WEIGHT: 1.0  # segmentation loss positive weights
+  BOX_GAIN: 0.05  # box loss gain
+  CLS_GAIN: 0.5  # classification loss gain
+  OBJ_GAIN: 1.0  # object loss gain
+  DA_SEG_GAIN: 0.2  # driving area segmentation loss gain
+  LL_SEG_GAIN: 0.2  # lane line segmentation loss gain
+  LL_IOU_GAIN: 0.2  # lane line IoU loss gain

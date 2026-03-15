@@ -1,0 +1,41 @@
+# Model type for factory selection
+TYPE: 'yolopx'
+
+# Model Configuration
+MODEL:
+  NAME: 'YOLOPX'
+  STRU_WITHSHARE: False  # Add share_block to segbranch
+  HEADS_NAME: ['']
+  IMAGE_SIZE: [640, 640]  # width * height
+  EXTRA: {}
+  
+  # Architecture-specific parameters (hardcoded - DO NOT MODIFY)
+  # These values are defined in the model code and shown here for reference only
+  
+  # Detection head parameters (hardcoded in lib/models/YOLOX_Head_scales_noshare.py)
+  nc: 1  # number of classes - hardcoded in lib/models/yolopx.py:135
+  strides: [8, 16, 32]  # feature map strides - hardcoded in YOLOXHead init
+  in_channels: [128, 256, 512]  # input channels for each scale
+  
+  # YOLOPX specific - NO anchors (anchor-free architecture)
+  # Uses SimOTA for dynamic label assignment instead of anchors
+  
+  # Model indices (hardcoded in lib/models/yolopx.py)
+  detector_index: 27  # Index of YOLOXHead in model architecture
+  det_out_idx: 27  # Detection output index
+  seg_out_idx: [63, 67]  # Segmentation output indices [da_seg, ll_seg]
+
+# Loss Configuration
+LOSS:
+  LOSS_NAME: ''
+  MULTI_HEAD_LAMBDA: null
+  FL_GAMMA: 2.0  # Focal loss gamma
+  CLS_POS_WEIGHT: 1.0  # Classification loss positive weights
+  OBJ_POS_WEIGHT: 1.0  # Object loss positive weights
+  SEG_POS_WEIGHT: 1.0  # Segmentation loss positive weights
+  BOX_GAIN: 0.05  # Box loss gain
+  CLS_GAIN: 0.5  # Classification loss gain
+  OBJ_GAIN: 1.0  # Object loss gain
+  DA_SEG_GAIN: 0.2  # Driving area segmentation loss gain
+  LL_SEG_GAIN: 0.2  # Lane line segmentation loss gain
+  LL_IOU_GAIN: 0.2  # Lane line IoU loss gain

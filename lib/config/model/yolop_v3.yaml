@@ -1,0 +1,57 @@
+# Model type for factory selection
+TYPE: 'yolop_v3'
+
+# Model Configuration
+MODEL:
+  NAME: 'YOLOP_v3'
+  STRU_WITHSHARE: False  # Add share_block to segbranch
+  HEADS_NAME: ['']
+  IMAGE_SIZE: [640, 640]  # width * height
+  EXTRA: {}
+  
+  # Architecture-specific parameters (hardcoded - DO NOT MODIFY)
+  # These values are defined in the model code and shown here for reference only
+  
+  # Detection settings (hardcoded in lib/models/yolop_v3.py)
+  nc: 1  # number of classes - hardcoded in lib/models/yolop_v3.py:91
+  
+  # Anchors (hardcoded in lib/models/yolop_v3.py:40-43 in YOLOP_v3 architecture definition)
+  # Used by IDetect head for anchor-based detection with 4 detection scales
+  anchors:
+    - [4.15629, 11.41984, 5.94761, 16.46950, 8.18673, 23.52688]  # P3/8 - for stride 8 feature map
+    - [12.04416, 29.51737, 16.35089, 41.95507, 24.17928, 57.18741]  # P4/16 - for stride 16 feature map
+    - [33.29597, 78.16243, 47.86408, 108.28889, 36.33312, 189.21414]  # P5/32 - for stride 32 feature map
+    - [73.09806, 144.64581, 101.18080, 253.37000, 136.02821, 408.82248]  # P6/64 - for stride 64 feature map (extra scale)
+  
+  # Model indices (hardcoded in lib/models/yolop_v3.py:14)
+  detector_index: 21  # Index of IDetect layer in model architecture
+  det_out_idx: 21  # Detection output index
+  seg_out_idx: [24, 26]  # Segmentation output indices [da_seg, ll_seg]
+  
+  # Architecture parameters
+  depth_multiple: 1.0  # model depth multiple
+  width_multiple: 1.0  # layer channel multiple
+  gr: 1.0  # iou loss ratio (for model.gr in ComputeLoss)
+  
+  # Segmentation settings
+  seg_nc: 2  # number of segmentation classes (drivable area)
+  seg_ll_nc: 2  # number of segmentation classes (lane line)
+  
+  # RepConv settings
+  use_repconv: True  # use RepConv blocks
+  use_ghost: True  # use Ghost modules for efficiency
+
+# Loss Configuration
+LOSS:
+  LOSS_NAME: 'MultiHeadLoss'
+  MULTI_HEAD_LAMBDA: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]  # [cls, obj, box, da_seg, ll_seg, ll_iou]
+  FL_GAMMA: 0.0  # focal loss gamma (0.0 = disabled)
+  CLS_POS_WEIGHT: 1.0  # classification loss positive weights
+  OBJ_POS_WEIGHT: 1.0  # object loss positive weights
+  SEG_POS_WEIGHT: 1.0  # segmentation loss positive weights
+  BOX_GAIN: 0.05  # box loss gain
+  CLS_GAIN: 0.5  # classification loss gain
+  OBJ_GAIN: 1.0  # object loss gain
+  DA_SEG_GAIN: 0.2  # driving area segmentation loss gain
+  LL_SEG_GAIN: 0.2  # lane line segmentation loss gain
+  LL_IOU_GAIN: 0.2  # lane line IoU loss gain
