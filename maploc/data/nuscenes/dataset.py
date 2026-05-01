@@ -330,6 +330,9 @@ class NuScenesDataModule(pl.LightningDataModule):
         )
         return loader
 
+    def train_dataloader(self, **kwargs):
+        return self.dataloader("train", **kwargs)
+
     def val_dataloader(self, **kwargs):
         return self.dataloader("val", **kwargs)
 
