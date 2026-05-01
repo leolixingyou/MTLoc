@@ -100,6 +100,8 @@ def main():
     parser.add_argument("--num_rotations", type=int, default=256)
     parser.add_argument("--adapter_type", default="fpn", choices=["simple", "fpn"])
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--max_num_val", type=int, default=None,
+                        help="Subsample val to this many; None = full 3773 (Paper 1 setting)")
     args = parser.parse_args()
 
     model = load_model(args).to(args.device).eval()
@@ -111,6 +113,7 @@ def main():
         "splits": {"train": "train_files.txt", "val": "test1_files.txt",
                     "test": "test2_files.txt"},
         "loading": {"val": {"batch_size": 1, "num_workers": 0}},
+        "max_num_val": args.max_num_val,
     })
     dm = KittiDataModule(cfg)
     dm.prepare_data()
