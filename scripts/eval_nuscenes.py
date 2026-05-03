@@ -69,6 +69,8 @@ def main():
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--version", default="v1.0-mini")
     parser.add_argument("--tiles_dir", default=None)
+    parser.add_argument("--data_dir", default=None,
+                        help="nuScenes root (overrides DataModule default; e.g. /workspace/datasets/nuscenes)")
     parser.add_argument("--num_samples", type=int, default=None)
     args = parser.parse_args()
 
@@ -98,6 +100,8 @@ def main():
     cfg_dict = {"version": args.version}
     if args.tiles_dir:
         cfg_dict["tiles_dir"] = args.tiles_dir
+    if args.data_dir:
+        cfg_dict["data_dir"] = args.data_dir
     dm = NuScenesDataModule(OmegaConf.create(cfg_dict))
     dm.prepare_data()
     dm.setup(stage="test")
