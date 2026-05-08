@@ -219,6 +219,10 @@ class MTLocNet(BaseModel):
         "normalize_scores_by_num_valid": True,
         "prior_renorm": True,
         "retrieval_dim": None,
+        # D.1 (W4_paper1_improvement_implementation.md): semantic alignment auxiliary loss
+        # OSMLoc-B Eq.6 — L2 align BEV features (1x1-conv-projected) with M_sem at GT pose
+        "semantic_align_lambda": 0.0,  # 0 disables; OSMLoc paper uses 20.0
+        "semantic_align_dim": 8,       # projection dim (matches map encoder embedding_dim default)
     }
 
     def _init(self, conf):
@@ -250,6 +254,11 @@ class MTLocNet(BaseModel):
             self.register_parameter(
                 "temperature", nn.Parameter(torch.tensor(0.0))
             )
+
+        # D.1 — semantic alignment auxiliary head (OSMLoc-B Eq.6)
+        if conf.semantic_align_lambda > 0:
+            self.sem_align_proj_bev = nn.Conv2d(conf.matching_dim, conf.semantic_align_dim, 1)
+            self.sem_align_proj_map = nn.Conv2d(conf.matching_dim, conf.semantic_align_dim, 1)
 
     def exhaustive_voting(self, f_bev, f_map, valid_bev, confidence_bev=None):
         if self.conf.normalize_features:
@@ -329,8 +338,73 @@ class MTLocNet(BaseModel):
             "yaw_expectation": uvr_avg[..., 2],
             "features_image": f_image,
             "features_bev": f_bev,
+            "valid_bev": valid_bev,
+            "features_bev": f_bev,
             "valid_bev": valid_bev.squeeze(1),
         }
+
+    def compute_semantic_align_loss(self, pred, data, valid_bev):
+        """D.1 — Semantic-alignment auxiliary loss (OSMLoc-B Eq.6).
+
+        L2 distance between (1x1-conv-projected) BEV features and (1x1-conv-projected)
+        map features, sampled at the GT pose. The two projection heads bring BEV and
+        map embeddings into a shared semantic space; aligning them at GT supervises
+        the BEV head to encode map-class-aware features.
+        """
+        from maploc.models.voting import sample_xyr  # not directly usable here but kept for ref
+
+        # f_bev in vehicle frame, f_map in global map frame
+        f_bev = pred["features_bev"]            # [B, C, H_bev, W_bev]
+        f_map = pred["map"]["map_features"][0]  # [B, C, H_map, W_map]
+
+        f_bev_sem = self.sem_align_proj_bev(f_bev)  # [B, D, H_bev, W_bev]
+        f_map_sem = self.sem_align_proj_map(f_map)  # [B, D, H_map, W_map]
+
+        # Normalize to unit length (per OSMLoc convention) so L2 ∈ [0, 4],
+        # making λ=20 produce a balanced auxiliary signal vs NLL.
+        f_bev_sem = F.normalize(f_bev_sem, dim=1)
+        f_map_sem = F.normalize(f_map_sem, dim=1)
+
+        # Build a sampling grid that takes the BEV-frame coords -> map-frame coords
+        # under GT pose (xy_gt, yaw_gt).  grid_xz_bev gives BEV cells' (x, z) in meters
+        # (vehicle frame, z forward, x right).  We rotate by yaw_gt and translate by uv_gt.
+        ppm = self.conf.pixel_per_meter
+        grid_xz = self.projection_bev.grid_xz  # [H_bev, W_bev, 2] in meters, vehicle frame
+        H_bev, W_bev = grid_xz.shape[:2]
+
+        xy_gt = data["uv"]                                  # [B, 2] in map pixels
+        yaw_gt_rad = data["roll_pitch_yaw"][..., -1] / 180.0 * np.pi  # [B]
+        cos = torch.cos(yaw_gt_rad)
+        sin = torch.sin(yaw_gt_rad)
+        # rotation 2x2 per batch
+        rotmat = torch.stack(
+            [torch.stack([cos, -sin], -1), torch.stack([sin, cos], -1)], -2
+        )  # [B, 2, 2]
+
+        # grid_xz: [H, W, 2]; broadcast to [B, H, W, 2], rotate, translate to map-pixel coords
+        grid = grid_xz.to(f_bev.device).unsqueeze(0).expand(f_bev.shape[0], -1, -1, -1).clone()
+        # rotate vehicle-frame (x, z) by yaw -> still vehicle-aligned but in map orientation
+        grid_rot = torch.einsum("bij,bhwj->bhwi", rotmat, grid)
+        # convert meters to map-pixels and translate
+        grid_map = grid_rot * ppm + xy_gt[:, None, None, :]  # [B, H, W, 2] in map-pixel units
+
+        # Normalize to [-1, 1] for grid_sample, with align_corners=True
+        H_map, W_map = f_map_sem.shape[-2:]
+        grid_norm = grid_map.clone()
+        grid_norm[..., 0] = grid_norm[..., 0] / (W_map - 1) * 2 - 1
+        grid_norm[..., 1] = grid_norm[..., 1] / (H_map - 1) * 2 - 1
+
+        f_map_at_gt = F.grid_sample(
+            f_map_sem, grid_norm, align_corners=True, mode="bilinear", padding_mode="zeros"
+        )  # [B, D, H_bev, W_bev]
+
+        sq_diff = (f_bev_sem - f_map_at_gt).pow(2).sum(dim=1)  # [B, H_bev, W_bev]
+        if valid_bev is not None:
+            denom = valid_bev.float().sum(dim=(-2, -1)).clamp(min=1.0)
+            sem_loss = (sq_diff * valid_bev.float()).sum(dim=(-2, -1)) / denom  # [B]
+        else:
+            sem_loss = sq_diff.mean(dim=(-2, -1))
+        return sem_loss
 
     def loss(self, pred, data):
         from maploc.models.voting import nll_loss_xyr, nll_loss_xyr_smoothed
@@ -349,6 +423,13 @@ class MTLocNet(BaseModel):
             nll = nll_loss_xyr(pred["log_probs"], xy_gt, yaw_gt)
 
         loss = {"total": nll, "nll": nll}
+
+        # D.1 semantic alignment aux loss
+        if self.training and self.conf.semantic_align_lambda > 0:
+            sem_loss = self.compute_semantic_align_loss(pred, data, pred.get("valid_bev"))
+            loss["sem_align"] = sem_loss
+            loss["total"] = loss["total"] + self.conf.semantic_align_lambda * sem_loss
+
         if self.training and self.conf.add_temperature:
             loss["temperature"] = self.temperature.expand(len(nll))
         return loss
@@ -401,6 +482,8 @@ def create_mtloc_model(
     load_pretrained: bool = True,
     adapter_type: str = "fpn",
     freeze_backbone: bool = True,
+    semantic_align_lambda: float = 0.0,
+    semantic_align_dim: int = 8,
 ) -> MTLocNet:
     """
     Create MTLocNet with pretrained OrienterNet weights.
@@ -436,6 +519,8 @@ def create_mtloc_model(
         "normalize_scores_by_num_valid": mc["normalize_scores_by_num_valid"],
         "map_encoder": mc["map_encoder"],
         "bev_net": mc["bev_net"],
+        "semantic_align_lambda": semantic_align_lambda,
+        "semantic_align_dim": semantic_align_dim,
     })
 
     model = MTLocNet(conf)
