@@ -102,6 +102,8 @@ def main():
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--max_num_val", type=int, default=None,
                         help="Subsample val to this many; None = full 3773 (Paper 1 setting)")
+    parser.add_argument("--split", default="val", choices=["val", "test"],
+                        help="val=test1_files.txt (3773), test=test2_files.txt (7542)")
     args = parser.parse_args()
 
     model = load_model(args).to(args.device).eval()
@@ -112,13 +114,13 @@ def main():
         "tiles_filename": "tiles.pkl",
         "splits": {"train": "train_files.txt", "val": "test1_files.txt",
                     "test": "test2_files.txt"},
-        "loading": {"val": {"batch_size": 1, "num_workers": 0}},
+        "loading": {args.split: {"batch_size": 1, "num_workers": 0}},
         "max_num_val": args.max_num_val,
     })
     dm = KittiDataModule(cfg)
     dm.prepare_data()
-    dm.setup("fit")
-    dataloader = dm.dataloader("val")
+    dm.setup("fit" if args.split == "val" else "test")
+    dataloader = dm.dataloader(args.split)
     ppm = dm.tile_manager.ppm
 
     # Evaluate
