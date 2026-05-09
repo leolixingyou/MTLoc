@@ -72,6 +72,8 @@ def main():
     parser.add_argument("--data_dir", default=None,
                         help="nuScenes root (overrides DataModule default; e.g. /workspace/datasets/nuscenes)")
     parser.add_argument("--num_samples", type=int, default=None)
+    parser.add_argument("--save_per_sample", default=None,
+                        help="Path to .npz for per-sample errors (CDF / Wilson-CI / paired-test analyses)")
     args = parser.parse_args()
 
     device = torch.device(args.device)
@@ -136,6 +138,17 @@ def main():
             r = (errors < t).float().mean().item() * 100
             print(f"  {label:>12} @{t}{unit}: {r:.1f}%")
         print(f"  {label:>12}   mean: {errors.mean():.2f}, median: {errors.median():.2f}")
+
+    if args.save_per_sample is not None:
+        import numpy as np
+        np.savez(
+            args.save_per_sample,
+            lateral_error=np.array(all_metrics["lateral_error"]),
+            longitudinal_error=np.array(all_metrics["longitudinal_error"]),
+            yaw_error=np.array(all_metrics["yaw_error"]),
+            xy_error=np.array(all_metrics["xy_error"]),
+        )
+        print(f"  per-sample errors saved to {args.save_per_sample}")
 
 
 if __name__ == "__main__":

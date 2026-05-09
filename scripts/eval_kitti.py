@@ -104,6 +104,8 @@ def main():
                         help="Subsample val to this many; None = full 3773 (Paper 1 setting)")
     parser.add_argument("--split", default="val", choices=["val", "test"],
                         help="val=test1_files.txt (3773), test=test2_files.txt (7542)")
+    parser.add_argument("--save_per_sample", default=None,
+                        help="Path to .npz to save per-sample errors (lateral/longitudinal/yaw/xy) for CDF / Wilson-CI / paired-test analyses")
     args = parser.parse_args()
 
     model = load_model(args).to(args.device).eval()
@@ -147,6 +149,17 @@ def main():
         print(f"  {label:>12} @1/3/5{unit}: {recalls}")
         print(f"  {label:>12}   mean/med: "
               f"{errors.mean().item():.3f} / {errors.median().item():.3f}")
+
+    if args.save_per_sample is not None:
+        import numpy as np
+        np.savez(
+            args.save_per_sample,
+            lateral_error=np.array(all_metrics["lateral_error"]),
+            longitudinal_error=np.array(all_metrics["longitudinal_error"]),
+            yaw_error=np.array(all_metrics["yaw_error"]),
+            xy_error=np.array(all_metrics["xy_error"]),
+        )
+        print(f"  per-sample errors saved to {args.save_per_sample}")
 
 
 if __name__ == "__main__":
