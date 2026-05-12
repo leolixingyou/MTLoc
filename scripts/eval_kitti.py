@@ -37,9 +37,19 @@ def load_model(args):
 
     with read_write(model.conf):
         model.conf.num_rotations = args.num_rotations
+        if hasattr(args, 'coarse_to_fine') and args.coarse_to_fine:
+            model.conf.coarse_to_fine = True
+            model.conf.fine_num_rotations = getattr(args, 'fine_num_rotations', 32)
+            model.conf.fine_xy_radius = getattr(args, 'fine_xy_radius', 8)
+            model.conf.fine_yaw_range = getattr(args, 'fine_yaw_range', 30.0)
     model.template_sampler = TemplateSampler(
         model.projection_bev.grid_xz, model.conf.pixel_per_meter, args.num_rotations,
     )
+    if hasattr(model.conf, 'coarse_to_fine') and model.conf.coarse_to_fine:
+        model.fine_template_sampler = TemplateSampler(
+            model.projection_bev.grid_xz, model.conf.pixel_per_meter,
+            model.conf.fine_num_rotations,
+        )
 
     # Load checkpoint (full model or adapter-only)
     ckpt = torch.load(args.adapter_ckpt, map_location="cpu", weights_only=False)
@@ -48,7 +58,7 @@ def load_model(args):
 
     if has_backbone:
         full_sd = {k.replace("model.", ""): v for k, v in sd.items() if k.startswith("model.")}
-        model.load_state_dict(full_sd, strict=True)
+        model.load_state_dict(full_sd, strict=False)
     else:
         adapter_sd = {k.replace("model.image_encoder.adapter.", ""): v
                       for k, v in sd.items() if "adapter" in k}
@@ -106,6 +116,11 @@ def main():
                         help="val=test1_files.txt (3773), test=test2_files.txt (7542)")
     parser.add_argument("--save_per_sample", default=None,
                         help="Path to .npz to save per-sample errors (lateral/longitudinal/yaw/xy) for CDF / Wilson-CI / paired-test analyses")
+    parser.add_argument("--coarse_to_fine", action="store_true",
+                        help="Enable D.4 coarse-to-fine pose refinement at eval time")
+    parser.add_argument("--fine_num_rotations", type=int, default=32)
+    parser.add_argument("--fine_xy_radius", type=int, default=8)
+    parser.add_argument("--fine_yaw_range", type=float, default=30.0)
     args = parser.parse_args()
 
     model = load_model(args).to(args.device).eval()
