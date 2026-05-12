@@ -57,10 +57,11 @@ class AverageKeyMeter(MeanMetric):
 
 
 class TrainingModule(pl.LightningModule):
-    def __init__(self, model, lr=1e-4):
+    def __init__(self, model, lr=1e-4, pseudo_depth_dir=None):
         super().__init__()
         self.model = model
         self.lr = lr
+        self.pseudo_depth_dir = pseudo_depth_dir
         self.save_hyperparameters(ignore=["model"])
         self.metrics_val = MetricCollection(self.model.metrics(), prefix="val/")
         self.losses_val = None
@@ -68,7 +69,41 @@ class TrainingModule(pl.LightningModule):
     def forward(self, batch):
         return self.model(batch)
 
+    def _load_pseudo_depth(self, batch):
+        """Load pseudo-depth labels for D.2 depth supervision."""
+        if self.pseudo_depth_dir is None:
+            return batch
+        import numpy as np
+        from pathlib import Path
+        depths = []
+        pd_dir = Path(self.pseudo_depth_dir)
+        for i in range(len(batch["name"])):
+            # name: "2011_10_03/2011_10_03_drive_0034_sync/image_02/data/0000003630.png"
+            name = batch["name"][i]
+            parts = name.split("/")
+            frame = parts[-1].replace(".png", "")
+            npz_path = pd_dir / parts[0] / parts[1] / (frame + ".npz")
+            if npz_path.exists():
+                d = np.load(str(npz_path))["depth"].astype(np.float32)
+                depths.append(torch.from_numpy(d))
+            else:
+                # Fallback: zeros (no supervision for this sample)
+                depths.append(torch.zeros(1))
+        # Only add if all samples have valid depth
+        if all(d.numel() > 1 for d in depths):
+            # Resize all to same size (use image batch size as reference)
+            H_img, W_img = batch["image"].shape[-2:]
+            resized = []
+            for d in depths:
+                d_t = d.unsqueeze(0).unsqueeze(0)  # [1, 1, H, W]
+                d_r = torch.nn.functional.interpolate(d_t, size=(H_img, W_img), mode="bilinear", align_corners=False)
+                resized.append(d_r.squeeze(0).squeeze(0))
+            batch["pseudo_depth"] = torch.stack(resized).to(self.device)
+        return batch
+
     def training_step(self, batch, batch_idx):
+        if self.pseudo_depth_dir is not None:
+            batch = self._load_pseudo_depth(batch)
         pred = self(batch)
         losses = self.model.loss(pred, batch)
         total_loss = losses["total"].mean()
@@ -193,6 +228,7 @@ def build_model(args):
     with read_write(model.conf):
         model.conf.num_rotations = 64
         model.conf.semantic_align_lambda = args.semantic_align_lambda
+        model.conf.depth_supervision_lambda = getattr(args, "depth_supervision_lambda", 0.0)
     model.template_sampler = TemplateSampler(
         model.projection_bev.grid_xz, model.conf.pixel_per_meter, 64,
     )
@@ -250,6 +286,10 @@ def main():
     parser.add_argument("--adapter_type", default="fpn", choices=["simple", "fpn"])
     parser.add_argument("--semantic_align_lambda", type=float, default=0.0,
                         help="D.1 semantic-alignment aux loss weight (OSMLoc-B Eq.6); 0=off, paper uses 20.0")
+    parser.add_argument("--depth_supervision_lambda", type=float, default=0.0,
+                        help="D.2 depth supervision weight (OSMLoc-B Eq.5); 0=off, paper uses 10.0")
+    parser.add_argument("--pseudo_depth_dir", default=None,
+                        help="Dir with pseudo-depth .npz files from Depth-Anything-V2")
     parser.add_argument("--ckpt_path", default=str(REPO_ROOT / "checkpoints/orienternet_mgl.ckpt"))
     parser.add_argument("--yolopx_weights", default=str(REPO_ROOT / "checkpoints/epoch-195.pth"))
     parser.add_argument("--data_dir", default="/workspace/kitti")
@@ -267,7 +307,8 @@ def main():
     print(f"Dataset: KITTI ({args.data_dir})")
 
     model = build_model(args)
-    lit_module = TrainingModule(model, lr=args.lr)
+    pseudo_depth_dir = args.pseudo_depth_dir if args.depth_supervision_lambda > 0 else None
+    lit_module = TrainingModule(model, lr=args.lr, pseudo_depth_dir=pseudo_depth_dir)
     dm = create_datamodule(args.data_dir, args.batch_size)
 
     callbacks = [
