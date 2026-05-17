@@ -129,7 +129,10 @@ class MTLocImageEncoder(nn.Module):
         if yolopx_weights is not None:
             from lib.models.common import ELANNet
             self.backbone = ELANNet(use_C2=True)
-            self._load_yolopx_weights(yolopx_weights)
+            if yolopx_weights.lower() not in ("none", "random", "skip"):
+                self._load_yolopx_weights(yolopx_weights)
+            else:
+                print("Backbone initialized with RANDOM weights (no pretrained loading)")
 
         self.scales = [4]  # C2 features are at 1/4 resolution
 
@@ -618,6 +621,7 @@ def create_mtloc_model(
     freeze_backbone: bool = True,
     semantic_align_lambda: float = 0.0,
     semantic_align_dim: int = 8,
+    matching_dim_override: int = None,
 ) -> MTLocNet:
     """
     Create MTLocNet with pretrained OrienterNet weights.
@@ -641,7 +645,7 @@ def create_mtloc_model(
         "yolopx_weights": yolopx_weights_path,
         "freeze_backbone": freeze_backbone,
         "latent_dim": mc["latent_dim"],
-        "matching_dim": mc["matching_dim"],
+        "matching_dim": matching_dim_override if matching_dim_override else mc["matching_dim"],
         "z_max": mc["z_max"],
         "x_max": mc["x_max"],
         "pixel_per_meter": mc["pixel_per_meter"],
