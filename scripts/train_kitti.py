@@ -223,12 +223,15 @@ def build_model(args):
         adapter_type=args.adapter_type,
         freeze_backbone=STRATEGY_INFO[args.strategy]["freeze_backbone"],
         semantic_align_lambda=getattr(args, "semantic_align_lambda", 0.0),
+        matching_dim_override=getattr(args, "matching_dim", None) if getattr(args, "matching_dim", 8) != 8 else None,
     )
 
     with read_write(model.conf):
         model.conf.num_rotations = 64
         model.conf.semantic_align_lambda = args.semantic_align_lambda
         model.conf.depth_supervision_lambda = getattr(args, "depth_supervision_lambda", 0.0)
+        if hasattr(args, "matching_dim") and args.matching_dim != 8:
+            print(f"[E5] matching_dim = {args.matching_dim}")
     model.template_sampler = TemplateSampler(
         model.projection_bev.grid_xz, model.conf.pixel_per_meter, 64,
     )
@@ -284,6 +287,8 @@ def main():
     parser.add_argument("--max_steps", type=int, default=200000)
     parser.add_argument("--val_every", type=int, default=5000)
     parser.add_argument("--adapter_type", default="fpn", choices=["simple", "fpn"])
+    parser.add_argument("--matching_dim", type=int, default=8,
+                        help="BEV/map feature dimension for matching (default 8, try 32 for E5)")
     parser.add_argument("--semantic_align_lambda", type=float, default=0.0,
                         help="D.1 semantic-alignment aux loss weight (OSMLoc-B Eq.6); 0=off, paper uses 20.0")
     parser.add_argument("--depth_supervision_lambda", type=float, default=0.0,
