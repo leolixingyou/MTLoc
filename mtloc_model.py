@@ -260,6 +260,16 @@ class MTLocNet(BaseModel):
 
         if conf.bev_net is None:
             self.feature_projection = nn.Linear(conf.latent_dim, conf.matching_dim)
+
+        # When matching_dim is overridden (e.g. 32 instead of 8),
+        # map encoder and bev_net still output the original dim (8).
+        # Add projection layers to bridge the gap.
+        self._map_encoder_out_dim = 8  # OrienterNet default
+        if conf.matching_dim != self._map_encoder_out_dim:
+            self.map_proj = nn.Conv2d(self._map_encoder_out_dim, conf.matching_dim, 1)
+            if conf.bev_net is not None:
+                self.bev_proj = nn.Conv2d(self._map_encoder_out_dim, conf.matching_dim, 1)
+
         if conf.add_temperature:
             self.register_parameter(
                 "temperature", nn.Parameter(torch.tensor(0.0))
@@ -331,6 +341,12 @@ class MTLocNet(BaseModel):
         else:
             pred_bev = pred["bev"] = self.bev_net({"input": f_bev})
             f_bev = pred_bev["output"]
+
+        # Project to matching_dim if overridden (e.g. 8→32)
+        if hasattr(self, 'map_proj'):
+            f_map = self.map_proj(f_map)
+        if hasattr(self, 'bev_proj') and self.conf.bev_net is not None:
+            f_bev = self.bev_proj(f_bev)
 
         scores = self.exhaustive_voting(
             f_bev, f_map, valid_bev, pred_bev.get("confidence")
@@ -487,6 +503,9 @@ class MTLocNet(BaseModel):
         # f_bev in vehicle frame, f_map in global map frame
         f_bev = pred["features_bev"]            # [B, C, H_bev, W_bev]
         f_map = pred["map"]["map_features"][0]  # [B, C, H_map, W_map]
+        # Project to matching_dim if overridden
+        if hasattr(self, 'map_proj'):
+            f_map = self.map_proj(f_map)
 
         f_bev_sem = self.sem_align_proj_bev(f_bev)  # [B, D, H_bev, W_bev]
         f_map_sem = self.sem_align_proj_map(f_map)  # [B, D, H_map, W_map]
