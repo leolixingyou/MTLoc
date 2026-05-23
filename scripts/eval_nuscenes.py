@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Evaluate MTLoc on nuScenes (zero-shot from MGL training).
+Evaluate YOLOPX-Loc on nuScenes (zero-shot from MGL training).
 
 Usage:
     python scripts/eval_nuscenes.py \
@@ -23,7 +23,7 @@ from omegaconf import OmegaConf, read_write
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from mtloc_model import create_mtloc_model
+from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
 from maploc.data.nuscenes.dataset import NuScenesDataModule
 from maploc.data.torch import collate
 from maploc.models.voting import TemplateSampler
@@ -62,8 +62,8 @@ def compute_metrics(pred, data, ppm):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate MTLoc on nuScenes")
-    parser.add_argument("--ckpt", required=True, help="MTLoc checkpoint")
+    parser = argparse.ArgumentParser(description="Evaluate YOLOPX-Loc on nuScenes")
+    parser.add_argument("--ckpt", required=True, help="YOLOPX-Loc checkpoint")
     parser.add_argument("--ckpt_path", default=str(REPO_ROOT / "checkpoints/orienternet_mgl.ckpt"))
     parser.add_argument("--yolopx_weights", default=str(REPO_ROOT / "checkpoints/epoch-195.pth"))
     parser.add_argument("--device", default="cuda:0")
@@ -128,7 +128,7 @@ def main():
 
     # Results
     print(f"\n{'=' * 60}")
-    print(f"  MTLoc on nuScenes ({n} samples)")
+    print(f"  YOLOPX-Loc on nuScenes ({n} samples)")
     print(f"{'=' * 60}")
     for key in ["xy_error", "lateral_error", "longitudinal_error", "yaw_error"]:
         errors = torch.tensor(all_metrics[key])

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Evaluate MTLoc on KITTI (zero-shot from MGL training).
+Evaluate YOLOPX-Loc on KITTI (zero-shot from MGL training).
 
 Usage:
     python scripts/eval_kitti.py \
@@ -21,7 +21,7 @@ from tqdm import tqdm
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from mtloc_model import create_mtloc_model
+from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
 from maploc.data.kitti.dataset import KittiDataModule
 from maploc.models.voting import TemplateSampler
 from omegaconf import OmegaConf, read_write
@@ -102,7 +102,7 @@ def compute_metrics(pred, data, ppm):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate MTLoc on KITTI")
+    parser = argparse.ArgumentParser(description="Evaluate YOLOPX-Loc on KITTI")
     parser.add_argument("--adapter_ckpt", required=True)
     parser.add_argument("--ckpt_path", default=str(REPO_ROOT / "checkpoints/orienternet_mgl.ckpt"))
     parser.add_argument("--yolopx_weights", default=str(REPO_ROOT / "checkpoints/epoch-195.pth"))
@@ -153,7 +153,7 @@ def main():
 
     # Results
     print(f"\n{'=' * 60}")
-    print(f"  MTLoc on KITTI ({len(all_metrics['xy_error'])} samples)")
+    print(f"  YOLOPX-Loc on KITTI ({len(all_metrics['xy_error'])} samples)")
     print(f"{'=' * 60}")
     for key in ["lateral_error", "longitudinal_error", "yaw_error", "xy_error"]:
         errors = torch.tensor(all_metrics[key])

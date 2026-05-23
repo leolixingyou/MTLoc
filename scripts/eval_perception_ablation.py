@@ -23,7 +23,7 @@ from tqdm import tqdm
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from mtloc_model import create_mtloc_model
+from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
 from maploc.data.kitti.dataset import KittiDataModule
 from maploc.models.voting import TemplateSampler, argmax_xyr
 from omegaconf import OmegaConf, read_write

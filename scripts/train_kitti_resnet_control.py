@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Control Experiment: ResNet-50 frozen + same FPN adapter as MTLoc.
+"""Control Experiment: ResNet-50 frozen + same FPN adapter as YOLOPX-Loc.
 
 Isolates the contribution of backbone (ELANNet vs ResNet-50) from adapter design.
 If ResNet+FPN ≈ ELANNet+FPN → improvement is from adapter, not backbone.
@@ -17,7 +17,7 @@ from collections import OrderedDict
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from mtloc_model import MTLocNet, FPNAdapter
+from yolopx_loc_model import YOLOPXLocNet, FPNAdapter
 from maploc.data.kitti.dataset import KittiDataModule
 from maploc.models.voting import TemplateSampler
 from omegaconf import OmegaConf, read_write
@@ -26,7 +26,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 class ResNet50FrozenEncoder(nn.Module):
-    """Frozen ResNet-50 backbone + same FPN adapter as MTLoc."""
+    """Frozen ResNet-50 backbone + same FPN adapter as YOLOPX-Loc."""
 
     def __init__(self, latent_dim=128, ckpt_path=None):
         super().__init__()
@@ -49,10 +49,10 @@ class ResNet50FrozenEncoder(nn.Module):
         # Align ResNet layer4 (2048) to 1024 to match ELANNet's C5
         self.channel_align = nn.Conv2d(2048, 1024, 1, bias=False)
 
-        # Same FPN adapter as MTLoc (in_channels_list matches ResNet-50 after channel_align)
+        # Same FPN adapter as YOLOPX-Loc (in_channels_list matches ResNet-50 after channel_align)
         self.adapter = FPNAdapter(in_channels_list=[256, 512, 1024, 1024], out_channels=latent_dim)
 
-        self.scales = [4]  # same as MTLoc
+        self.scales = [4]  # same as YOLOPX-Loc
 
     def forward(self, data):
         image = data["image"]
@@ -77,10 +77,10 @@ class ResNet50FrozenEncoder(nn.Module):
 
 
 def create_resnet_control_model(orienternet_ckpt_path, latent_dim=128):
-    """Create MTLocNet but with ResNet-50 backbone instead of ELANNet."""
-    from mtloc_model import create_mtloc_model
+    """Create YOLOPX-LocNet but with ResNet-50 backbone instead of ELANNet."""
+    from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
 
-    # First create a normal MTLoc model to get the decoder weights
+    # First create a normal YOLOPX-Loc model to get the decoder weights
     model = create_mtloc_model(
         orienternet_ckpt_path=orienternet_ckpt_path,
         yolopx_weights_path=str(REPO_ROOT / "checkpoints/epoch-195.pth"),

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Evaluate YOLOPX perception (DA/LL/Det) with backbone from MTLoc checkpoint.
+Evaluate YOLOPX perception (DA/LL/Det) with backbone from YOLOPX-Loc checkpoint.
 
 Verifies that freezing the backbone preserves multi-task perception performance.
 
@@ -8,7 +8,7 @@ Usage:
     # Standalone YOLOPX baseline
     python scripts/eval_bdd100k.py --mode standalone --gpu 0
 
-    # With MTLoc backbone (should match standalone if backbone is frozen)
+    # With YOLOPX-Loc backbone (should match standalone if backbone is frozen)
     python scripts/eval_bdd100k.py --mode mtloc --ckpt checkpoints/mtloc_445k.ckpt --gpu 0
 """
 
@@ -32,7 +32,7 @@ from lib.utils.utils import create_logger, select_device
 
 
 def extract_backbone_from_mtloc(ckpt_path):
-    """Extract ELANNet backbone weights from MTLoc checkpoint."""
+    """Extract ELANNet backbone weights from YOLOPX-Loc checkpoint."""
     ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     sd = ckpt["state_dict"]
     prefix_in = "model.image_encoder.backbone."
@@ -48,7 +48,7 @@ def extract_backbone_from_mtloc(ckpt_path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["standalone", "mtloc"], required=True)
-    parser.add_argument("--ckpt", default=None, help="MTLoc checkpoint (for mtloc mode)")
+    parser.add_argument("--ckpt", default=None, help="YOLOPX-Loc checkpoint (for mtloc mode)")
     parser.add_argument("--yolopx_weights", default=os.path.join(REPO_ROOT, "checkpoints/epoch-195.pth"))
     parser.add_argument("--bdd_root", default="data/bdd100k")
     parser.add_argument("--gpu", type=int, default=0)
@@ -118,7 +118,7 @@ def main():
         final_output_dir, tb_log_dir, logger, device,
     )
 
-    label = "YOLOPX standalone" if args.mode == "standalone" else f"MTLoc backbone"
+    label = "YOLOPX standalone" if args.mode == "standalone" else f"YOLOPX-Loc backbone"
     print(f"\n{'=' * 60}")
     print(f"  {label}")
     print(f"{'=' * 60}")

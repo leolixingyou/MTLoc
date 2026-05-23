@@ -22,7 +22,7 @@ import timm
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from mtloc_model import MTLocNet, FPNAdapter
+from yolopx_loc_model import YOLOPXLocNet as YOLOPX-LocNet, FPNAdapter
 from maploc.models.voting import TemplateSampler
 from omegaconf import read_write
 import pytorch_lightning as pl
@@ -30,7 +30,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 class DenseNetFrozenEncoder(nn.Module):
-    """Frozen DenseNet-121 + same FPN adapter as MTLoc."""
+    """Frozen DenseNet-121 + same FPN adapter as YOLOPX-Loc."""
 
     def __init__(self, latent_dim=128, pretrained=False):
         super().__init__()
@@ -44,7 +44,7 @@ class DenseNetFrozenEncoder(nn.Module):
         for p in self.backbone.parameters():
             p.requires_grad = False
 
-        # Same FPN adapter as MTLoc — channels match exactly [256,512,1024,1024]
+        # Same FPN adapter as YOLOPX-Loc — channels match exactly [256,512,1024,1024]
         self.adapter = FPNAdapter(
             in_channels_list=[256, 512, 1024, 1024],
             out_channels=latent_dim
@@ -81,7 +81,7 @@ def main():
         suffix = "pretrained" if args.pretrained else "random"
         args.output_dir = str(REPO_ROOT / f"runs/control_densenet121_{suffix}")
 
-    from mtloc_model import create_mtloc_model
+    from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
     from scripts.train_kitti import TrainingModule, create_datamodule, apply_strategy
 
     # Create base model for decoder weights

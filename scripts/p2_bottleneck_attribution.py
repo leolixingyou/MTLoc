@@ -23,14 +23,14 @@ from tqdm import tqdm
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from mtloc_model import create_mtloc_model
+from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
 from maploc.data.kitti.dataset import KittiDataModule
 from maploc.models.voting import TemplateSampler, argmax_xyr, log_softmax_spatial
 from omegaconf import OmegaConf, read_write
 
 
 def load_model_and_data(args, max_samples=500):
-    """Load MTLoc model and KITTI dataloader."""
+    """Load YOLOPX-Loc model and KITTI dataloader."""
     model = create_mtloc_model(
         orienternet_ckpt_path=str(REPO_ROOT / "checkpoints/orienternet_mgl.ckpt"),
         yolopx_weights_path=str(REPO_ROOT / "checkpoints/epoch-195.pth"),

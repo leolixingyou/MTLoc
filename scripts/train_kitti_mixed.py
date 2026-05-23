@@ -89,7 +89,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Build model (same as train_kitti.py)
-    from mtloc_model import create_mtloc_model
+    from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
     from maploc.models.voting import TemplateSampler
     from omegaconf import read_write
     from scripts.train_kitti import apply_strategy

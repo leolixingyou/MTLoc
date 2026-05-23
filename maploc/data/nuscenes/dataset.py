@@ -1,5 +1,5 @@
 # Copyright (c) Li Xingyou, 2026.
-# nuScenes data module for OrienterNet/MTLoc evaluation.
+# nuScenes data module for OrienterNet/YOLOPX-Loc evaluation.
 # Modeled after maploc/data/kitti/dataset.py
 
 import collections.abc

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Evaluate MTLoc on MGL (Mapillary Geo-Localization) validation set.
+Evaluate YOLOPX-Loc on MGL (Mapillary Geo-Localization) validation set.
 
 Usage:
     python scripts/eval_mgl.py \
@@ -21,7 +21,7 @@ from omegaconf import OmegaConf, read_write
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from mtloc_model import create_mtloc_model
+from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
 from maploc.data import MapillaryDataModule
 from maploc.module import GenericModule
 from maploc.models.voting import TemplateSampler
@@ -34,7 +34,7 @@ AVAILABLE_CITIES = [
 
 
 def load_model(args):
-    """Load OrienterNet baseline or MTLocNet."""
+    """Load OrienterNet baseline or YOLOPXLocNet."""
     if args.model == "orienternet":
         cfg = OmegaConf.create({"model": {"num_rotations": args.num_rotations}})
         module = GenericModule.load_from_checkpoint(

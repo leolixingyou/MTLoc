@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train the MTLoc adapter on Mapillary Geo-Localization (MGL) dataset.
+Train the YOLOPX-Loc adapter on Mapillary Geo-Localization (MGL) dataset.
 
 Strategy:
   - Freeze: YOLOPX ELANNet backbone (pretrained)
@@ -30,7 +30,7 @@ from torchmetrics import MeanMetric, MetricCollection
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from mtloc_model import create_mtloc_model
+from yolopx_loc_model import create_yolopx_loc_model as create_mtloc_model
 from maploc.data.mapillary.dataset import MapillaryDataModule
 from maploc.models.voting import TemplateSampler
 from maploc.models.metrics import AngleError, AngleRecall, Location2DError, Location2DRecall
@@ -109,7 +109,7 @@ class AdapterTrainingModule(pl.LightningModule):
 # ---------------------------------------------------------------------------
 
 def build_model(args):
-    """Build MTLocNet and freeze non-adapter parameters."""
+    """Build YOLOPXLocNet and freeze non-adapter parameters."""
     model = create_mtloc_model(
         orienternet_ckpt_path=args.ckpt_path,
         yolopx_weights_path=args.yolopx_weights,
@@ -197,7 +197,7 @@ def create_datamodule(data_dir, batch_size=4):
 # ---------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Train MTLoc adapter")
+    parser = argparse.ArgumentParser(description="Train YOLOPX-Loc adapter")
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--lr", type=float, default=1e-4)
