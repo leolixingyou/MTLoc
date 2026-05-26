@@ -15,3 +15,6 @@
 # Target: Replace DINOv2 with ELANNet+FPN in OSMLoc framework
 # Interface: model.image_encoder module replacement
 # Expected: 1-2 days code + 28h training
+
+# OSMLoc-S uses ResNet101-FPN (same encoder as OrienterNet)
+# P1-A: Replace ResNet101 → ELANNet in OSMLoc-S framework
