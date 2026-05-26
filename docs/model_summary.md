@@ -11,3 +11,7 @@
 # ELANNet encoder: ~13 GFLOPs
 # ResNet-101 encoder: ~48 GFLOPs
 # Savings: -73% FLOPs, -68% params
+# P1-A: OSMLoc decoder integration planned
+# Target: Replace DINOv2 with ELANNet+FPN in OSMLoc framework
+# Interface: model.image_encoder module replacement
+# Expected: 1-2 days code + 28h training
